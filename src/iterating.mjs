@@ -1,18 +1,56 @@
 import setText , {appendText} from './results.mjs';
 
-export function get(){
+export async function get(){
+    const {data} = await axios.get("http://localhost:3000/orders/1");
+    setText(JSON.stringify(data));
 }
 
-export function getCatch(){
+export async function getCatch(){
+    try {
+        const {data} = await axios.get("http://localhost:3000/orders/123");
+        setText(JSON.stringify(data));
+    } catch (error) {
+        setText(error);
+    }
 }
 
-export function chain(){
+// RUN THEM DEPENDENT ON PRIOR
+export async function chain(){
+    const {data} = await axios.get("http://localhost:3000/orders/1");
+    const {data: address} = await axios.get(`http://localhost:3000/addresses/${data.shippingAddress}`);
+
+    setText(`City: ${JSON.stringify(address.city)}`);
+    
 }
 
-export function concurrent(){
+// RUN THEM ONE AFTER ANOTHER BUT NOT DEPENDENT ON PREVIOUS CALL
+export async function concurrent(){
+    const orderStatus = axios.get("http://localhost:3000/orderStatuses");
+    const orders = axios.get("http://localhost:3000/orders");
+
+    setText("");
+
+    const {data: statuses} =  await orderStatus;
+    const {data: order} = await orders;
+
+    appendText(JSON.stringify(statuses));
+    appendText(JSON.stringify(order[0]));
 }
 
-export function parallel(){
+// RUN THEM AT THE SAME TIME
+export async function parallel(){
+    setText("");
+
+    await Promise.all([
+        (async () => {
+            const {data} = await axios.get("http://localhost:3000/orderStatuses");
+            appendText(JSON.stringify(data));
+        })(),
+        (async () => {
+            const {data} = await axios.get("http://localhost:3000/orders");
+            appendText(JSON.stringify(data));
+        })()
+    ]);
 }
 
 
